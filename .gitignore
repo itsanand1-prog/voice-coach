@@ -1,0 +1,14 @@
+# Publish only the app. Everything else in this folder (books, session and track files,
+# design notes, README) stays on this computer. New files are private unless listed here.
+/*
+!/.gitignore
+!/.nojekyll
+!/index.html
+!/bench.html
+!/sw.js
+!/manifest.webmanifest
+!/package.json
+!/icons/
+!/src/
+!/test/
+!/tools/

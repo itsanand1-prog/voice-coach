@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f6a5b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<title>Voice Coach</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --panel: #ffffff; --ink: #1b2226; --muted: #5a656c; --line: #d9d6cd;
+    --accent: #0f6a5b; --accent-ink: #ffffff; --accent-soft: #dcefe9;
+    --warn: #8a5a00; --warn-soft: #fbefd2; --bad: #a3321f; --good: #1c6b34;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #13181a; --panel: #1c2326; --ink: #e8ebec; --muted: #9aa5ab; --line: #323b40;
+      --accent: #4fc3ad; --accent-ink: #0c1b18; --accent-soft: #1d3a35;
+      --warn: #f0c36a; --warn-soft: #3a3018; --bad: #ff9c88; --good: #7fd99a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 56px; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 600px; margin: 0 auto; }
+  .view { display: none; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  .view.active { display: grid; }
+  h1 { font-size: 1.3rem; margin: 0; }
+  h2 { font-size: 1rem; margin: 0 0 10px; }
+  h3 { font-size: 0.95rem; margin: 12px 0 4px; }
+  p { margin: 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.85rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .spread { justify-content: space-between; }
+  button, select {
+    font: inherit; min-height: 44px; padding: 10px 16px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button.big { width: 100%; min-height: 56px; font-size: 1.05rem; }
+  button.quiet { border-color: transparent; background: transparent; color: var(--muted); text-decoration: underline; padding: 10px 8px; }
+  button.danger { color: var(--bad); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  a { color: var(--accent); }
+  .banner { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 0.9rem; }
+  .banner:empty { display: none; }
+
+  /* Home */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .stat span { display: block; font-size: 0.78rem; color: var(--muted); }
+  .stat strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  progress { width: 100%; height: 8px; accent-color: var(--accent); }
+  ol.plan { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 4px; }
+  ol.plan li { display: flex; justify-content: space-between; gap: 12px; }
+  ol.plan li span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .goal { display: grid; gap: 2px; margin-bottom: 10px; }
+  .goal .row { justify-content: space-between; }
+  .goal.met strong { color: var(--good); }
+  .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .badge { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 0.85rem; }
+  .badge strong { display: block; font-size: 0.9rem; }
+  .badge.locked { opacity: 0.55; }
+  .badge.earned { border-color: var(--accent); background: var(--accent-soft); }
+  details summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+  details > *:not(summary) { margin-top: 10px; }
+  input[type="file"] { font: inherit; max-width: 100%; }
+  label.check { display: flex; gap: 8px; align-items: center; min-height: 44px; }
+  input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
+
+  /* Session */
+  .seg-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  #seg-timer { font-size: 1.6rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+  #seg-content { font-size: 1.2rem; line-height: 1.55; display: grid; gap: 8px; }
+  #seg-content .step strong { display: block; font-size: 1rem; }
+  #seg-content .step { font-size: 1rem; }
+  #seg-content .caller { font-size: 0.85rem; color: var(--muted); }
+  #cue {
+    min-height: 52px; display: grid; place-items: center; border-radius: 10px; font-size: 1.3rem; font-weight: 700;
+    background: var(--bg); color: var(--muted);
+  }
+  #cue.on { background: var(--warn-soft); color: var(--warn); }
+  canvas#trace { width: 100%; height: 130px; display: block; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+  .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .gauge { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+  .gauge span { display: block; font-size: 0.75rem; color: var(--muted); }
+  .gauge strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bar { position: relative; height: 8px; border-radius: 4px; background: var(--line); margin-top: 6px; overflow: hidden; }
+  .bar .zone { position: absolute; top: 0; bottom: 0; background: var(--accent-soft); border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+  .bar .marker { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--ink); border-radius: 2px; }
+  .bar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
+  .bar .fill.over { background: var(--warn); }
+  .marks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .marks button { min-height: 64px; font-weight: 600; }
+  /* Karaoke pacer */
+  #k-status { min-height: 1.5em; margin: 0 0 6px; color: var(--warn); font-weight: 600; }
+  .k-line { margin: 0; padding-left: 10px; border-left: 3px solid transparent; }
+  .k-line.current { border-left-color: var(--accent); }
+  .ks { border-radius: 4px; padding: 1px 0 3px; }
+  .ks.done { color: var(--muted); }
+  .ks.now {
+    background:
+      linear-gradient(var(--accent), var(--accent)) no-repeat left bottom / calc(var(--p, 0) * 100%) 4px,
+      var(--accent-soft);
+  }
+  .k-breath { font-size: 0.72rem; color: var(--muted); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+  .k-breath.now { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+
+  /* Review and result */
+  .ratings { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .ratings button[aria-pressed="true"], .yn button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .cand { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .yn { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .yn button { padding: 8px; }
+  #result-xp { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  ul.plain { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 6px 8px 6px 0; border-top: 1px solid var(--line); }
+  thead th { border-top: 0; font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- HOME -->
+  <div id="view-home" class="view active">
+    <header class="row spread">
+      <h1>Voice Coach</h1>
+      <span id="level-line" class="muted small"></span>
+    </header>
+    <div id="demo-banner" class="banner"></div>
+
+    <div class="stats">
+      <div class="stat"><span>Streak</span><strong id="stat-streak">0</strong></div>
+      <div class="stat"><span>Freezes</span><strong id="stat-freezes">0</strong></div>
+      <div class="stat"><span>Sessions</span><strong id="stat-sessions">0</strong></div>
+    </div>
+    <div>
+      <progress id="xp-bar" max="100" value="0" aria-label="Progress to next level"></progress>
+      <p id="xp-text" class="muted small"></p>
+    </div>
+
+    <section class="card" aria-labelledby="h-today">
+      <h2 id="h-today">Today's session</h2>
+      <p id="ladder-line" class="small muted" style="margin-bottom:10px"></p>
+      <ol id="segment-list" class="plan"></ol>
+      <label class="check small"><input type="checkbox" id="include-drill"> Add the block-modification drill (2 min)</label>
+      <div id="load-note" class="banner" style="margin:8px 0"></div>
+      <button id="start-session" class="primary big">Start session</button>
+      <p class="small muted" style="margin-top:10px">Stop and rest if your voice turns hoarse or your throat hurts or feels tight. A short or rough session still counts.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-goals">
+      <h2 id="h-goals">This week</h2>
+      <div id="goals"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-bests">
+      <h2 id="h-bests">Personal bests</h2>
+      <ul id="bests" class="plain"></ul>
+    </section>
+
+    <section class="card" aria-labelledby="h-badges">
+      <h2 id="h-badges">Badges</h2>
+      <div id="badges" class="badges"></div>
+    </section>
+
+    <section class="card">
+      <details>
+        <summary>Settings</summary>
+        <h3>Reading rate step</h3>
+        <p class="small muted">Steps up by itself after three reading blocks that meet the criteria. You can also set it here.</p>
+        <select id="ladder-step" aria-label="Reading rate step"></select>
+        <h3>Pitch target</h3>
+        <div id="pitch-panel" class="small"></div>
+        <h3>Back up to Google Drive</h3>
+        <p class="small muted">Saves your session measurements as a file; no audio is ever included. On a phone, choose Drive in the share menu and pick the account to keep it in.</p>
+        <div class="row">
+          <button id="export-new">Export new sessions</button>
+          <button id="export-all">Export everything</button>
+        </div>
+        <p id="export-status" class="small" role="status"></p>
+        <h3>Move sessions from another device</h3>
+        <p class="small muted">Choose an export file, or a single session file, from another device. Sessions already here are skipped.</p>
+        <input id="import-file" type="file" accept=".json,application/json" aria-label="Choose a file to import">
+        <p id="import-status" class="small" role="status"></p>
+        <div id="install-box" hidden>
+          <h3>Install</h3>
+          <p class="small muted">Adds Voice Coach to your home screen so it opens like an app and works without a connection.</p>
+          <button id="install-app">Install on this device</button>
+        </div>
+        <h3>Tools</h3>
+        <p class="small"><a href="bench.html">Measurement bench and self-test</a></p>
+      </details>
+    </section>
+
+    <section class="card">
+      <details>
+        <summary>About and safety</summary>
+        <p class="small">This is a self-directed practice tool. It is not medical advice and it does not diagnose anything. If hoarseness, pain or voice changes last more than two weeks, see an ENT doctor or a speech-language pathologist.</p>
+        <p class="small">Your voice is analysed on this device as you speak. No audio is stored or sent anywhere; only measurements are kept.</p>
+        <p class="small">Rewards are for practising, for using the techniques, and for taking on harder speaking situations. Stuttering during practice never costs you anything.</p>
+      </details>
+    </section>
+  </div>
+
+  <!-- SESSION -->
+  <div id="view-session" class="view">
+    <div class="seg-head">
+      <div>
+        <p id="seg-progress" class="small muted"></p>
+        <h1 id="seg-title"></h1>
+      </div>
+      <div id="seg-timer" role="timer" aria-live="off">0:00</div>
+    </div>
+    <p id="seg-intro" class="muted"></p>
+    <div id="mic-warning" class="banner"></div>
+
+    <section class="card">
+      <p id="k-status" class="small" role="status" aria-live="polite"></p>
+      <div id="seg-content"></div>
+      <div class="row" style="margin-top:12px">
+        <button id="content-next">Next</button>
+        <button id="content-restart" style="display:none">Start over</button>
+      </div>
+    </section>
+
+    <div id="live-panel" style="display:grid;gap:8px">
+      <div id="cue" role="status" aria-live="assertive"></div>
+      <canvas id="trace" aria-label="Pitch over the last ten seconds"></canvas>
+      <div class="gauges">
+        <div class="gauge"><span id="rate-label">Rate (syll/min)</span><strong id="rate-value">–</strong>
+          <div class="bar"><div id="rate-zone" class="zone"></div><div id="rate-marker" class="marker" style="left:0"></div></div></div>
+        <div class="gauge"><span>This breath</span><strong id="breath-value">0.0 s</strong>
+          <div class="bar"><div id="breath-fill" class="fill" style="width:0"></div></div></div>
+        <div class="gauge"><span>Last start</span><strong id="onset-value">–</strong></div>
+      </div>
+    </div>
+
+    <div class="marks">
+      <button id="mark-block">I blocked</button>
+      <button id="mark-rep">I repeated</button>
+    </div>
+    <p id="mark-note" class="small muted" role="status">Tap when it happens. Marks are for your own record and never lower your score.</p>
+
+    <div class="row spread">
+      <button id="skip-seg">Skip this part</button>
+      <button id="end-session">End session</button>
+    </div>
+    <button id="stop-safety" class="danger">My throat hurts or my voice is hoarse: stop</button>
+  </div>
+
+  <!-- REST BETWEEN SEGMENTS -->
+  <div id="view-rest" class="view">
+    <section class="card">
+      <h1 id="rest-title"></h1>
+      <p id="rest-text" class="muted" style="margin:8px 0 16px"></p>
+      <button id="rest-continue" class="primary big">Continue</button>
+      <button id="rest-finish" class="quiet">Finish here</button>
+    </section>
+  </div>
+
+  <!-- REVIEW -->
+  <div id="view-review" class="view">
+    <h1>How did it go?</h1>
+    <div id="review-note" class="banner"></div>
+    <section class="card">
+      <h2>Rate your technique today</h2>
+      <p class="small muted" style="margin-bottom:10px">How well did you use soft starts, steady rate and easy breathing? 1 is hardly, 5 is throughout. This is about technique, not about how fluent you were.</p>
+      <div class="ratings" role="group" aria-label="Self-rating">
+        <button data-v="1" aria-pressed="false">1</button>
+        <button data-v="2" aria-pressed="false">2</button>
+        <button data-v="3" aria-pressed="false">3</button>
+        <button data-v="4" aria-pressed="false">4</button>
+        <button data-v="5" aria-pressed="false">5</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Moments to check</h2>
+      <p id="marks-summary" class="small muted"></p>
+      <div id="candidates"></div>
+    </section>
+    <button id="finish-review" class="primary big" disabled>See results</button>
+  </div>
+
+  <!-- RESULT -->
+  <div id="view-result" class="view">
+    <h1>Session saved</h1>
+    <div id="result-quality" class="banner" role="status"></div>
+    <section class="card">
+      <div id="result-xp"></div>
+      <ul id="result-events" class="plain" style="margin-top:8px"></ul>
+    </section>
+    <section class="card">
+      <h2>Technique by part</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Part</th><th scope="col">Status</th><th scope="col">Technique</th><th scope="col">Rate</th></tr></thead>
+        <tbody id="result-segments"></tbody>
+      </table></div>
+      <p id="result-rating" class="small muted" style="margin-top:10px"></p>
+    </section>
+    <section class="card">
+      <h2>Reading block</h2>
+      <ul id="result-ladder" class="plain"></ul>
+    </section>
+    <section class="card">
+      <h2>Start vs end of each part</h2>
+      <ul id="result-drift" class="plain"></ul>
+    </section>
+    <div class="row">
+      <button id="result-done" class="primary">Done</button>
+      <button id="export-record">Download session JSON</button>
+      <button id="export-tuning">Download tuning track</button>
+    </div>
+  </div>
+
+</main>
+<script type="module" src="src/ui/app.js"></script>
+</body>
+</html>

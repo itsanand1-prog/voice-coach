@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f6a5b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<title>Voice Coach · Capture bench</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --ink: #1d2327; --muted: #5d676e; --line: #dcdad3;
+    --accent: #0f6a5b; --accent-ink: #ffffff; --bad: #a3321f; --good: #1c6b34;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14181a; --panel: #1d2326; --ink: #e8ebec; --muted: #9aa5ab; --line: #333c41;
+      --accent: #4fc3ad; --accent-ink: #0c1b18; --bad: #ff9c88; --good: #7fd99a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; display: grid; gap: 20px; }
+  h1 { font-size: 1.35rem; margin: 0; }
+  h2 { font-size: 1rem; margin: 0 0 12px; }
+  p { margin: 0; color: var(--muted); }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  button {
+    font: inherit; padding: 10px 16px; min-height: 44px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .live { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .live div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+  .live span { display: block; font-size: 0.8rem; color: var(--muted); }
+  .live strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .band { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 12px; }
+  label { font-size: 0.85rem; color: var(--muted); display: grid; gap: 4px; }
+  input {
+    font: inherit; width: 7.5rem; padding: 8px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  }
+  #status.error { color: var(--bad); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 8px 8px 8px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th { border-top: 0; font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+  tbody th { font-weight: 500; }
+  .passage { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 1.2rem; line-height: 1.5; }
+  .passage small { font-size: 0.75rem; color: var(--muted); margin-left: 4px; }
+  #pacer-dot { width: 28px; height: 28px; margin-bottom: 8px; border-radius: 50%; background: var(--accent); opacity: 0.15; }
+  #pacer-dot.on { animation: pulse 0.4s ease-out infinite; }
+  @keyframes pulse { 0% { opacity: 1; transform: scale(1.25); } 60%, 100% { opacity: 0.15; transform: scale(1); } }
+  ul { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  li.pass { color: var(--good); }
+  li.fail { color: var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Voice Coach · Capture bench</h1>
+    <p>Measurement bench: capture and metrics only. <a href="index.html">Back to the practice app</a></p>
+  </header>
+
+  <section aria-labelledby="h-session">
+    <h2 id="h-session">Session</h2>
+    <div class="band">
+      <label>Target band low (Hz)<input id="band-low" type="number" inputmode="numeric" min="50" max="500" placeholder="not set"></label>
+      <label>Target band high (Hz)<input id="band-high" type="number" inputmode="numeric" min="50" max="500" placeholder="not set"></label>
+    </div>
+    <div class="controls">
+      <button id="start" class="primary">Start</button>
+      <button id="stop" disabled>Stop</button>
+      <button id="export" disabled>Download metrics JSON</button>
+      <button id="export-track" disabled>Download tuning track</button>
+    </div>
+    <div class="live" aria-live="off">
+      <div><span>Pitch</span><strong id="live-f0">–</strong></div>
+      <div><span>Level</span><strong id="live-db">–</strong></div>
+      <div><span>Elapsed</span><strong id="live-time">0 s</strong></div>
+    </div>
+    <p id="status" role="status">Not recording. Leave the target band empty until a baseline is measured.</p>
+  </section>
+
+  <section aria-labelledby="h-passage">
+    <h2 id="h-passage">Test passage · 98 syllables</h2>
+    <p>Press Start, read it aloud once, one line per breath, then press Stop. Compare "Syllables detected" with 98. To pace yourself, turn on the pacer and say one syllable per pulse.</p>
+    <div class="band" style="margin-top:12px">
+      <label>Pacer (syllables/min)<input id="pacer-spm" type="number" inputmode="numeric" min="60" max="360" step="10" value="150"></label>
+      <button id="pacer-toggle" aria-pressed="false">Start pacer</button>
+      <span id="pacer-dot" aria-hidden="true"></span>
+    </div>
+    <ol class="passage">
+      <li>The morning sun rose over the quiet river. <small>12</small></li>
+      <li>A small boat moved slowly along the water. <small>11</small></li>
+      <li>On the far bank, seven geese were resting in the long grass. <small>14</small></li>
+      <li>I breathe in gently, and begin each line with an easy voice. <small>15</small></li>
+      <li>There is no hurry today. <small>7</small></li>
+      <li>Each word can take the time it needs. <small>8</small></li>
+      <li>When the line is over, I pause, breathe, and move along. <small>13</small></li>
+      <li>The river keeps on running, steady and slow, all the way down to the sea. <small>18</small></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="h-metrics">
+    <h2 id="h-metrics">Metrics</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Metric</th><th scope="col">Session</th><th scope="col" id="drift-head">First → last</th></tr></thead>
+        <tbody id="metrics"><tr><td colspan="3">Start a session to see metrics.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-selftest">
+    <h2 id="h-selftest">Acceptance self-test</h2>
+    <p>Plays nothing aloud. Feeds reference tones and a metronome-paced signal through the same capture path and checks the measurements (about 20 seconds).</p>
+    <div class="controls" style="margin-top:12px;margin-bottom:0">
+      <button id="selftest">Run self-test</button>
+    </div>
+    <ul id="selftest-results" aria-live="polite"></ul>
+  </section>
+</main>
+<script type="module" src="src/bench.js"></script>
+</body>
+</html>
