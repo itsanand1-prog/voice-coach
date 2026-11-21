@@ -572,12 +572,12 @@ async function toReview() {
   $('marks-summary').textContent =
     `You marked ${blocks} block${blocks === 1 ? '' : 's'} and ${live.marks.length - blocks} repetition${live.marks.length - blocks === 1 ? '' : 's'} yourself.` +
     (live.candidates.length
-      ? ` The app also noticed the moments below${live.flaggedTotal > live.candidates.length ? ` (the likeliest ${live.candidates.length} of ${live.flaggedTotal}, from every part)` : ''}. Its guesses are often wrong, so say what each one was. Your answers are saved to help tune it.`
+      ? ` The app also noticed the moments below${live.flaggedTotal > live.candidates.length ? ` (the likeliest ${live.candidates.length} of ${live.flaggedTotal}, from every part)` : ''}. Its guesses are often wrong, so say what each one was: Block, Repeat, Pause (you stopped to think) or Other (noise, a click, something else). Your answers are saved to help tune it.`
       : ' The app did not notice any others.');
 
   $('candidates').replaceChildren(
     ...live.candidates.map((c) => {
-      const choices = [['block', 'Block'], ['repetition', 'Repeat'], ['neither', 'Neither']].map(([value, label]) => {
+      const choices = [['block', 'Block'], ['repetition', 'Repeat'], ['pause', 'Pause'], ['neither', 'Other']].map(([value, label]) => {
         const button = el('button', { textContent: label, ariaPressed: 'false' });
         button.onclick = () => {
           c.answer = value;

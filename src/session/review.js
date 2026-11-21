@@ -1,6 +1,6 @@
 // Builds the end-of-session "moments to check" list from the two proxies.
 // Each entry carries the app's guess (kind) and the user's answer:
-// 'block' | 'repetition' | 'neither' | null (not answered).
+// 'block' | 'repetition' | 'pause' (a thinking pause) | 'neither' (noise or other) | null (not answered).
 
 import { REPETITION_DEFAULTS } from '../repetition.js';
 
@@ -46,6 +46,7 @@ export function countAnswers(candidates) {
   return {
     confirmedBlocks: candidates.filter((c) => c.answer === 'block').length,
     confirmedRepetitions: candidates.filter((c) => c.answer === 'repetition').length,
+    confirmedPauses: candidates.filter((c) => c.answer === 'pause').length,
     repetitionCandidates: candidates.filter((c) => c.kind === 'repetition').length,
   };
 }

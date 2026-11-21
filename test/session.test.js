@@ -105,6 +105,11 @@ test('record: carries the repetition review counts', () => {
   assert.equal(buildRecord(fakeSession()).confirmedRepetitions, 0);
 });
 
+test('record: carries the thinking-pause count, 0 when absent', () => {
+  assert.equal(buildRecord({ ...fakeSession(), confirmedPauses: 4 }).confirmedPauses, 4);
+  assert.equal(buildRecord(fakeSession()).confirmedPauses, 0);
+});
+
 test('record: keeps the reviewed moments with the answers given', () => {
   const reviewed = [
     { kind: 'block', part: 'Reading', atSec: 14.2, gapSec: 0.6, attemptSec: 0.1, answer: 'neither' },

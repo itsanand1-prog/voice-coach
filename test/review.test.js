@@ -37,15 +37,15 @@ test('review: each entry says what was noticed, and starts unanswered', () => {
 test('review: the user decides what each moment was, whatever the app guessed', () => {
   const list = reviewCandidates([block(5), block(20)], [rep(10, 10.4), rep(30, 30.2)], { part: 'Reading', offsetSec: 0 });
   list[0].answer = 'block'; // guessed block, was a block
-  list[1].answer = 'neither'; // guessed repetition, was nothing
+  list[1].answer = 'pause'; // guessed repetition, was a thinking pause
   list[2].answer = 'repetition'; // guessed block, was a repetition
   list[3].answer = 'block'; // guessed repetition, was a block
-  assert.deepEqual(countAnswers(list), { confirmedBlocks: 2, confirmedRepetitions: 1, repetitionCandidates: 2 });
+  assert.deepEqual(countAnswers(list), { confirmedBlocks: 2, confirmedRepetitions: 1, confirmedPauses: 1, repetitionCandidates: 2 });
 });
 
 test('review: unanswered moments are not counted as anything', () => {
   const list = reviewCandidates([block(5)], [rep(10, 10.4)], { part: 'Reading', offsetSec: 0 });
-  assert.deepEqual(countAnswers(list), { confirmedBlocks: 0, confirmedRepetitions: 0, repetitionCandidates: 1 });
+  assert.deepEqual(countAnswers(list), { confirmedBlocks: 0, confirmedRepetitions: 0, confirmedPauses: 0, repetitionCandidates: 1 });
 });
 
 test('review: entries keep what was measured, for tuning later', () => {
@@ -92,4 +92,11 @@ test('review: within a part, likeliest first: 3+ repeats, real-length attempts, 
 test('review: when there are few moments, all are shown', () => {
   const list = [cand('block', 'A', 1), cand('repetition', 'B', 2)];
   assert.equal(selectForReview(list).length, 2);
+});
+
+test('review: a thinking pause is not counted as a block or a repetition', () => {
+  const list = reviewCandidates([block(5), block(20)], [], { part: 'Reading', offsetSec: 0 });
+  list[0].answer = 'pause';
+  list[1].answer = 'neither';
+  assert.deepEqual(countAnswers(list), { confirmedBlocks: 0, confirmedRepetitions: 0, confirmedPauses: 1, repetitionCandidates: 0 });
 });

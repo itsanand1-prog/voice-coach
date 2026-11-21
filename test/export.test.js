@@ -62,3 +62,12 @@ test('rebuild keeps the date of the last export', () => {
   const s = rebuildState({ ...initialState(), lastExportAt: '2026-11-18T09:00:00.000Z' }, []);
   assert.equal(s.lastExportAt, '2026-11-18T09:00:00.000Z');
 });
+
+test('export: carries confirmedPauses, and an older file without it still imports', () => {
+  const e = buildExport([rec('2026-11-21T03:25:53.000Z', { confirmedPauses: 3 })], state, { now: new Date('2026-11-21T10:00:00Z') });
+  assert.equal(e.sessions[0].confirmedPauses, 3);
+  const old = { schema: EXPORT_SCHEMA, sessions: [rec('2026-11-17T16:08:17.000Z')] };
+  const { sessions } = parseExport(JSON.stringify(old));
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].confirmedPauses, undefined);
+});

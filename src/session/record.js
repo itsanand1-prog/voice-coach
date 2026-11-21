@@ -20,7 +20,7 @@ function compact(metrics) {
  * @param s.track       whole-session frame track
  * @param s.runs        [{id, from, to, plannedSec}] frame ranges actually spent in each segment
  * @param s.marks       [{type: 'block' | 'repetition', atSec}] tap-to-mark events
- * @param s.repetitionCandidates, s.confirmedRepetitions  counts from the end-of-session review
+ * @param s.repetitionCandidates, s.confirmedRepetitions, s.confirmedPauses  counts from the end-of-session review
  * @param s.reviewed    moments shown in the review, with what was measured and the user's answer
  * @param s.flaggedTotal  how many moments the detectors flagged before the review picked some
  * @param s.selfRating  1-5, given at session end
@@ -95,6 +95,7 @@ export function buildRecord(s) {
     confirmedBlocks: s.confirmedBlocks,
     repetitionCandidates: s.repetitionCandidates ?? 0,
     confirmedRepetitions: s.confirmedRepetitions ?? 0,
+    confirmedPauses: s.confirmedPauses ?? 0, // moments the user said were thinking pauses, not blocks
     reviewed: s.reviewed ?? [],
     flaggedTotal: s.flaggedTotal ?? (s.reviewed ?? []).length,
     selfRating: s.selfRating,
